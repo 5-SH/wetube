@@ -1,0 +1,59 @@
+extends layouts/main
+include mixins/videoPlayer
+
+block content
+  script(src='https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js').
+  script.
+    const deleteComment = (id) => {
+      const li = document.getElementById(id);
+      li.parentNode.remove();
+      
+      const commentNumber = document.getElementById('jsCommentNumber');
+      console.log(commentNumber.innerHTML);
+      
+      commentNumber.innerHTML = parseInt(commentNumber.innerHTML, 10) - 1;
+      
+    }
+
+    async function handleDeleteClick(id) {
+      const response = await axios({
+        url: `/api/${id}/comment`,
+        method: 'DELETE'
+        });
+      deleteComment(id);
+    }
+    
+  .video-detail__container
+    +videoPlayer({
+      src:video.fileUrl
+    })
+    .video__info
+      if loggedUser && video.creator.id === loggedUser.id
+        a(href=routes.editVideo(video.id))
+          button Edit video
+      h5.video__title=video.title
+      p.video__description=video.description
+      if video.views === 1
+        span.video__views 1 view
+      else 
+        span.video__views #{video.views} views
+      .video__author 
+        |Uploaded by
+        a(href=routes.userDetail(video.creator.id))=video.creator.name
+    .video__comments
+      if video.comments.length === 1
+        span.video__comment-number
+          span#jsCommentNumber 1
+          |  comment
+      else
+        span.video__comment-number
+          span#jsCommentNumber=video.comments.length
+          |  comments 
+      form.add__comment#jsAddComment
+        input(type='text', placeholder='Add a comment')
+      ul.video__comments-list#jsCommentList
+        each comment in video.comments.reverse()
+          li#jsCommentList
+            span=comment.text
+            if (loggedUser.id === comment.creator.id)
+              input(type='submit', value='delete', id=comment.id, onclick='handleDeleteClick("' + comment.id + '");')
